@@ -12,8 +12,8 @@ const WC_D = 1.8;
 const DOOR_X0 = 0.7;      // ~600 mm offset + start
 const DOOR_W = 1.595;
 const STAGING_D = 2.5;
-const LEVELS = 4;
-const PITCH = 0.45;
+const LEVELS = 5;
+const PITCH = 0.36;
 const BAY_W = 1.5;        // longspan bay width
 const SHELF_D = 0.55;     // single-deep depth
 const COL_W = 0.4;
@@ -26,15 +26,15 @@ const CAP = {
       '<strong>~22 bays</strong> × <strong>4 levels</strong> ≈ <strong>~88 shelf positions</strong><br/>' +
       'Left + right double-deep longspan along 13.1 m walls.<br/>' +
       'Main aisle ≈ <strong>2.4 m</strong> (≥ 1.2 m). Staging <strong>2.5 m</strong> at entrance.<br/>' +
-      'Rack height 1.9 m · pitch ~0.45 m · light-duty / longspan.',
+      'Rack height 1.9 m · ~5 levels · 100 kg/level · white light-duty.',
   },
   B: {
     title: 'Capacity — Option B (Cross-bay)',
     html:
-      '<strong>~28 bays</strong> × <strong>4 levels</strong> ≈ <strong>~112 shelf positions</strong><br/>' +
+      '<strong>~28 bays</strong> × <strong>5 levels</strong> ≈ <strong>~140 shelf positions</strong><br/>' +
       'Shorter runs ⊥ to long walls · denser bay count.<br/>' +
       'Pick aisles <strong>1.1 m</strong>. Staging <strong>2.5 m</strong> · WC + doors clear.<br/>' +
-      'Rack height 1.9 m · pitch ~0.45 m · light-duty / longspan.',
+      'Rack height 1.9 m · ~5 levels · 100 kg/level · white light-duty.',
   },
 };
 
@@ -144,7 +144,7 @@ function roundRect(ctx, x, y, w, h, r) {
 }
 
 /* Floor */
-const floorMat = mat(0x3a4554, { roughness: 0.9 });
+const floorMat = mat(0x2a3038, { roughness: 0.95 });
 box(W, 0.05, D, floorMat, W / 2, -0.025, D / 2).receiveShadow = true;
 
 /* Floor grid (1 m) */
@@ -157,7 +157,7 @@ box(W, 0.05, D, floorMat, W / 2, -0.025, D / 2).receiveShadow = true;
 }
 
 /* Perimeter walls (open top for viewing) */
-const wallMat = mat(0x6b7686, { roughness: 0.85 });
+const wallMat = mat(0x9aa3b0, { roughness: 0.88 });
 const glassMat = mat(0x8ec8e8, { roughness: 0.15, metalness: 0.2, opacity: 0.35, side: THREE.DoubleSide });
 
 /* Bottom wall (entrance) — split around doors */
@@ -203,6 +203,10 @@ box(DOOR_W, 2.1, 0.08, doorMat, DOOR_X0 + DOOR_W / 2, 1.05, 0.04);
 const doorLabel = labelSprite('ENTRANCE', '#9ec0ff', 0.9);
 doorLabel.position.set(DOOR_X0 + DOOR_W / 2, 2.45, 0.4);
 unit.add(doorLabel);
+/* Corridor landmark from 7 Oct photo */
+const shalom = labelSprite('SHALOM (corridor)', '#ffd36b', 0.85);
+shalom.position.set(DOOR_X0 + DOOR_W / 2, 2.95, -0.55);
+unit.add(shalom);
 
 /* Staging zone marker (floor tint) */
 {
@@ -263,8 +267,9 @@ unit.add(doorLabel);
 }
 
 /* ===== Racking builders ===== */
-const frameMat = mat(0xb8954a, { roughness: 0.55, metalness: 0.25 });
-const shelfMat = mat(0xd4c09a, { roughness: 0.65, metalness: 0.08 });
+/* White boltless / longspan — matches 7 Oct site photo */
+const frameMat = mat(0xe8eef5, { roughness: 0.45, metalness: 0.35 });
+const shelfMat = mat(0xf4f6f8, { roughness: 0.7, metalness: 0.05 });
 const aisleMat = new THREE.MeshStandardMaterial({
   color: 0x3d9cf0,
   transparent: true,
@@ -362,7 +367,7 @@ function buildOptionA(parent) {
     `<strong>~${bayCount} bays</strong> × <strong>${LEVELS} levels</strong> ≈ <strong>~${bayCount * LEVELS} shelf positions</strong><br/>` +
     `Left + right double-deep longspan along 13.1 m walls.<br/>` +
     `Main aisle ≈ <strong>${aisleW.toFixed(1)} m</strong> (≥ 1.2 m). Staging <strong>${STAGING_D} m</strong> at entrance.<br/>` +
-    `Rack height ${H_RACK} m · pitch ~${PITCH} m · light-duty / longspan.`;
+    `Rack height ${H_RACK} m · ${LEVELS} levels · 100 kg/level · white light-duty.`;
 }
 
 function buildOptionB(parent) {
@@ -416,7 +421,7 @@ function buildOptionB(parent) {
     `<strong>~${bayCount} bays</strong> × <strong>${LEVELS} levels</strong> ≈ <strong>~${bayCount * LEVELS} shelf positions</strong><br/>` +
     `Shorter runs ⊥ to long walls · denser bay count.<br/>` +
     `Pick aisles <strong>${aisle} m</strong>. Staging <strong>${STAGING_D} m</strong> · WC + doors clear.<br/>` +
-    `Rack height ${H_RACK} m · pitch ~${PITCH} m · light-duty / longspan.`;
+    `Rack height ${H_RACK} m · ${LEVELS} levels · 100 kg/level · white light-duty.`;
 }
 
 function setOption(opt) {
