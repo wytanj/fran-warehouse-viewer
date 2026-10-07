@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CT Hub #11-18 — Warehouse Racking Viewer</title>
+  <style>
+    :root {
+      --bg: #0f1419;
+      --panel: rgba(18, 24, 32, 0.92);
+      --border: #2a3544;
+      --text: #e8eef5;
+      --muted: #8b9bb0;
+      --accent: #3d9cf0;
+      --accent2: #2dd4a8;
+      --warn: #f0b429;
+      --door: #5b8def;
+      --wc: #c97b63;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { width: 100%; height: 100%; overflow: hidden; background: var(--bg); color: var(--text); font-family: "Segoe UI", system-ui, sans-serif; }
+    #c { display: block; width: 100%; height: 100%; }
+    #ui {
+      position: absolute; top: 12px; left: 12px; width: min(360px, calc(100vw - 24px));
+      background: var(--panel); border: 1px solid var(--border); border-radius: 12px;
+      padding: 14px 16px; backdrop-filter: blur(10px); z-index: 10;
+      max-height: calc(100vh - 24px); overflow-y: auto; box-shadow: 0 8px 32px rgba(0,0,0,.45);
+    }
+    h1 { font-size: 15px; font-weight: 650; letter-spacing: .02em; margin-bottom: 2px; }
+    .sub { font-size: 11px; color: var(--muted); margin-bottom: 12px; line-height: 1.35; }
+    .row { display: flex; gap: 8px; margin-bottom: 10px; flex-wrap: wrap; }
+    button {
+      flex: 1; min-width: 120px; padding: 9px 12px; border-radius: 8px; border: 1px solid var(--border);
+      background: #1a2330; color: var(--text); font-size: 12px; font-weight: 600; cursor: pointer;
+      transition: background .15s, border-color .15s, transform .1s;
+    }
+    button:hover { background: #243044; border-color: #3a4a60; }
+    button.active { background: #1e3a5f; border-color: var(--accent); color: #fff; box-shadow: inset 0 0 0 1px var(--accent); }
+    button.sec { flex: 0 0 auto; min-width: 0; padding: 7px 10px; font-weight: 500; color: var(--muted); }
+    .cap {
+      background: #141c27; border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px;
+      font-size: 12px; line-height: 1.45; margin-bottom: 10px;
+    }
+    .cap strong { color: var(--accent2); }
+    .cap .title { font-weight: 650; margin-bottom: 4px; color: var(--text); }
+    details.assumptions {
+      border: 1px solid var(--border); border-radius: 8px; padding: 8px 12px; background: #141c27; font-size: 11px;
+    }
+    details.assumptions summary { cursor: pointer; font-weight: 650; color: var(--warn); list-style: none; }
+    details.assumptions summary::-webkit-details-marker { display: none; }
+    details.assumptions ul { margin: 8px 0 4px 16px; color: var(--muted); line-height: 1.5; }
+    details.assumptions li strong { color: var(--text); font-weight: 600; }
+    .legend { display: flex; flex-wrap: wrap; gap: 8px 14px; margin-top: 10px; font-size: 11px; color: var(--muted); }
+    .legend span::before {
+      content: ""; display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 5px; vertical-align: -1px;
+    }
+    .lg-rack::before { background: #c4a35a; }
+    .lg-aisle::before { background: #3d9cf0; }
+    .lg-door::before { background: var(--door); }
+    .lg-wc::before { background: var(--wc); }
+    .lg-stage::before { background: #4a7c59; }
+    .hint { font-size: 10px; color: var(--muted); margin-top: 8px; line-height: 1.4; }
+    #hud {
+      position: absolute; bottom: 12px; right: 12px; background: var(--panel); border: 1px solid var(--border);
+      border-radius: 8px; padding: 8px 12px; font-size: 11px; color: var(--muted); z-index: 10;
+      font-variant-numeric: tabular-nums;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="c"></canvas>
+  <div id="ui">
+    <h1>CT Hub · Unit #11-18</h1>
+    <div class="sub">11th storey · BASE ARCHITECTURAL PLAN · 7.1 × 13.1 m (91.77 m²)<br/>Interactive racking layout viewer · Fran / Heyfran</div>
+
+    <div class="row">
+      <button id="btnA" class="active" type="button">Option A — Long-aisle</button>
+      <button id="btnB" type="button">Option B — Cross-bay</button>
+    </div>
+    <div class="row">
+      <button id="btnTop" class="sec" type="button">Top view</button>
+      <button id="btnIso" class="sec" type="button">Iso view</button>
+      <button id="btnReset" class="sec" type="button">Reset cam</button>
+    </div>
+
+    <div class="cap" id="capacity">
+      <div class="title">Capacity — Option A</div>
+      Loading…
+    </div>
+
+    <details class="assumptions" open>
+      <summary>Assumptions (plan + Fran ops)</summary>
+      <ul>
+        <li><strong>Footprint:</strong> 7.100 × 13.100 m = 91.77 m² (plan B1). Not 2000 sqft.</li>
+        <li><strong>Clear ceiling:</strong> 3.0 m (ops assumption; not on sheet)</li>
+        <li><strong>Rack clear height:</strong> 1.9 m max under 3 m ceiling</li>
+        <li><strong>Rack type:</strong> light-duty boltless / longspan shelving (not selective pallet)</li>
+        <li><strong>Shelf pitch:</strong> ~0.45–0.50 m → 3–4 levels under 1.9 m</li>
+        <li><strong>Aisle A:</strong> main long aisle ≥ 1.2 m; staging ~2.5 m deep at entrance</li>
+        <li><strong>Aisle B:</strong> pick aisles 1.0–1.2 m between cross runs</li>
+        <li><strong>Keep clear:</strong> WC/MV (~1.8×1.8 m bottom-right), entrance doors, perimeter columns</li>
+        <li><strong>Scale:</strong> plan says dimensions indicative — verify on site</li>
+      </ul>
+    </details>
+
+    <div class="legend">
+      <span class="lg-rack">Racking</span>
+      <span class="lg-aisle">Aisle guide</span>
+      <span class="lg-stage">Staging</span>
+      <span class="lg-door">Doors</span>
+      <span class="lg-wc">WC / MV</span>
+    </div>
+    <div class="hint">Drag to orbit · Right-drag / Shift-drag to pan · Scroll to zoom · Axes: X=width, Z=depth, Y=up</div>
+  </div>
+  <div id="hud">Option A</div>
+
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
+    }
+  }
+  </script>
+  <script type="module" src="./app.js"></script>
+</body>
+</html>
